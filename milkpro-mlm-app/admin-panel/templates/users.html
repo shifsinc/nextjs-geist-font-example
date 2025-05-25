@@ -1,0 +1,158 @@
+{{ define "content" }}
+<div class="space-y-6">
+    <!-- Search and Filter -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div class="flex-1 max-w-lg">
+                <label for="search" class="sr-only">Search users</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" id="search" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Search by name, phone, or email">
+                </div>
+            </div>
+            <div class="flex space-x-4">
+                <select id="kyc-filter" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="">All KYC Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users List -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul class="divide-y divide-gray-200" id="users-list">
+            {{ range .Users }}
+            <li>
+                <div class="px-4 py-4 sm:px-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-12 w-12">
+                                {{ if .ProfileImage }}
+                                <img class="h-12 w-12 rounded-full" src="{{ .ProfileImage }}" alt="">
+                                {{ else }}
+                                <span class="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <svg class="h-6 w-6 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </span>
+                                {{ end }}
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">{{ .Name }}</div>
+                                <div class="text-sm text-gray-500">{{ .Phone }}</div>
+                                <div class="text-sm text-gray-500">{{ .Email }}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="text-sm text-gray-500">
+                                <div>Investments: {{ .Investments }}</div>
+                                <div>Transactions: {{ .Transactions }}</div>
+                                <div>Referrals: {{ .Referrals }}</div>
+                            </div>
+                            <div>
+                                {{ if eq .KYCStatus "pending" }}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    Pending KYC
+                                </span>
+                                {{ else if eq .KYCStatus "approved" }}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    KYC Approved
+                                </span>
+                                {{ else }}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    KYC Rejected
+                                </span>
+                                {{ end }}
+                            </div>
+                            {{ if eq .KYCStatus "pending" }}
+                            <div class="flex space-x-2">
+                                <button data-user-id="{{ .ID }}" data-action="approve" 
+                                    class="kyc-action inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    Approve
+                                </button>
+                                <button data-user-id="{{ .ID }}" data-action="reject"
+                                    class="kyc-action inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                    Reject
+                                </button>
+                            </div>
+                            {{ end }}
+                        </div>
+                    </div>
+                </div>
+            </li>
+            {{ end }}
+        </ul>
+    </div>
+</div>
+
+<script>
+    // Search and filter functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search');
+        const kycFilter = document.getElementById('kyc-filter');
+        const usersList = document.getElementById('users-list');
+
+        function filterUsers() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const kycStatus = kycFilter.value;
+            const users = usersList.getElementsByTagName('li');
+
+            Array.from(users).forEach(user => {
+                const name = user.querySelector('.text-gray-900').textContent.toLowerCase();
+                const phone = user.querySelector('.text-gray-500').textContent.toLowerCase();
+                const email = user.querySelectorAll('.text-gray-500')[1].textContent.toLowerCase();
+                const status = user.querySelector('.rounded-full').textContent.trim().toLowerCase();
+
+                const matchesSearch = name.includes(searchTerm) || 
+                                   phone.includes(searchTerm) || 
+                                   email.includes(searchTerm);
+                const matchesStatus = !kycStatus || status.includes(kycStatus);
+
+                user.style.display = matchesSearch && matchesStatus ? '' : 'none';
+            });
+        }
+
+        searchInput.addEventListener('input', filterUsers);
+        kycFilter.addEventListener('change', filterUsers);
+    });
+
+    // KYC action handlers
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.kyc-action').forEach(button => {
+            button.addEventListener('click', async function() {
+                const userId = this.dataset.userId;
+                const action = this.dataset.action;
+                
+                try {
+                    const response = await fetch('/admin/api/kyc/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            user_id: parseInt(userId),
+                            status: action === 'approve' ? 'approved' : 'rejected'
+                        })
+                    });
+
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert(`Failed to ${action} KYC`);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(`Failed to ${action} KYC`);
+                }
+            });
+        });
+    });
+</script>
+{{ end }}
