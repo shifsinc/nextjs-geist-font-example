@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }} - MilkPro MLM Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-xl font-bold">MilkPro MLM</span>
+                    </div>
+                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                        <a href="/admin/dashboard" class="inline-flex items-center px-1 pt-1 border-b-2 {{ if eq .Active "dashboard" }}border-indigo-500 text-gray-900{{ else }}border-transparent text-gray-500{{ end }} hover:border-gray-300 hover:text-gray-700">
+                            Dashboard
+                        </a>
+                        <a href="/admin/users" class="inline-flex items-center px-1 pt-1 border-b-2 {{ if eq .Active "users" }}border-indigo-500 text-gray-900{{ else }}border-transparent text-gray-500{{ end }} hover:border-gray-300 hover:text-gray-700">
+                            Users
+                        </a>
+                        <a href="/admin/products" class="inline-flex items-center px-1 pt-1 border-b-2 {{ if eq .Active "products" }}border-indigo-500 text-gray-900{{ else }}border-transparent text-gray-500{{ end }} hover:border-gray-300 hover:text-gray-700">
+                            Products
+                        </a>
+                        <a href="/admin/projects" class="inline-flex items-center px-1 pt-1 border-b-2 {{ if eq .Active "projects" }}border-indigo-500 text-gray-900{{ else }}border-transparent text-gray-500{{ end }} hover:border-gray-300 hover:text-gray-700">
+                            Projects
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div class="ml-3 relative">
+                        <div>
+                            <button type="button" class="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" id="user-menu-button">
+                                <span class="sr-only">Open user menu</span>
+                                <span class="inline-block h-8 w-8 rounded-full overflow-hidden bg-gray-100">
+                                    <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {{ template "content" . }}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white shadow mt-8">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500 text-sm">
+                &copy; 2024 MilkPro MLM. All rights reserved.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
