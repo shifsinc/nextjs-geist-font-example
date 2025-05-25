@@ -1,0 +1,227 @@
+{{ define "content" }}
+<div class="space-y-6">
+    <!-- Add Product Button -->
+    <div class="flex justify-end">
+        <button type="button" onclick="showAddProductModal()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Add Product
+        </button>
+    </div>
+
+    <!-- Products List -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Products</h3>
+                <div class="mt-3 md:mt-0 md:ml-4">
+                    <select id="type-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="">All Types</option>
+                        <option value="milk">Milk</option>
+                        <option value="dairy">Dairy Products</option>
+                        <option value="feed">Animal Feed</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <ul class="divide-y divide-gray-200" id="products-list">
+            {{ range .Products }}
+            <li class="product-item" data-type="{{ .Type }}">
+                <div class="px-4 py-4 flex items-center sm:px-6">
+                    <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <div class="flex text-sm">
+                                <p class="font-medium text-indigo-600 truncate">{{ .Name }}</p>
+                                <p class="ml-1 flex-shrink-0 font-normal text-gray-500">in {{ .Type }}</p>
+                            </div>
+                            <div class="mt-2 flex">
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                                    </svg>
+                                    Price: ${{ printf "%.2f" .Price }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
+                            <div class="flex space-x-4">
+                                <button type="button" 
+                                    data-product-id="{{ .ID }}"
+                                    class="edit-product inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Edit
+                                </button>
+                                <button type="button"
+                                    data-product-id="{{ .ID }}"
+                                    class="delete-product inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            {{ end }}
+        </ul>
+    </div>
+</div>
+
+<!-- Add/Edit Product Modal -->
+<div id="productModal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <form id="productForm" onsubmit="handleProductSubmit(event)">
+                <input type="hidden" id="productId" value="">
+                <div>
+                    <div class="mt-3 text-center sm:mt-0 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Add New Product</h3>
+                        <div class="mt-4 space-y-4">
+                            <div>
+                                <label for="productName" class="block text-sm font-medium text-gray-700">Product Name</label>
+                                <input type="text" name="name" id="productName" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="productType" class="block text-sm font-medium text-gray-700">Type</label>
+                                <select id="productType" name="type" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                    <option value="milk">Milk</option>
+                                    <option value="dairy">Dairy Products</option>
+                                    <option value="feed">Animal Feed</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="productPrice" class="block text-sm font-medium text-gray-700">Price</label>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" name="price" id="productPrice" required min="0" step="0.01" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Save
+                    </button>
+                    <button type="button" onclick="hideProductModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Filter products by type
+    document.getElementById('type-filter').addEventListener('change', function() {
+        const selectedType = this.value;
+        const products = document.querySelectorAll('.product-item');
+        
+        products.forEach(product => {
+            if (!selectedType || product.dataset.type === selectedType) {
+                product.style.display = '';
+            } else {
+                product.style.display = 'none';
+            }
+        });
+    });
+
+    // Modal handling
+    const modal = document.getElementById('productModal');
+    const form = document.getElementById('productForm');
+    const modalTitle = document.getElementById('modal-title');
+
+    function showAddProductModal() {
+        modalTitle.textContent = 'Add New Product';
+        form.reset();
+        document.getElementById('productId').value = '';
+        modal.classList.remove('hidden');
+    }
+
+    // Initialize event handlers
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle edit product buttons
+        document.querySelectorAll('.edit-product').forEach(button => {
+            button.addEventListener('click', async function() {
+                const productId = this.dataset.productId;
+                modalTitle.textContent = 'Edit Product';
+                
+                try {
+                    const response = await fetch(`/admin/api/products/${productId}`);
+                    if (!response.ok) throw new Error('Failed to fetch product');
+                    
+                    const product = await response.json();
+                    document.getElementById('productId').value = product.id;
+                    document.getElementById('productName').value = product.name;
+                    document.getElementById('productType').value = product.type;
+                    document.getElementById('productPrice').value = product.price;
+                    modal.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to load product details');
+                }
+            });
+        });
+
+        // Handle delete product buttons
+        document.querySelectorAll('.delete-product').forEach(button => {
+            button.addEventListener('click', async function() {
+                const productId = this.dataset.productId;
+                if (!confirm('Are you sure you want to delete this product?')) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/admin/api/products/${productId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Failed to delete product');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to delete product');
+                }
+            });
+        });
+
+        // Handle form submission
+        document.getElementById('productForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const productId = document.getElementById('productId').value;
+            const formData = {
+                name: document.getElementById('productName').value,
+                type: document.getElementById('productType').value,
+                price: parseFloat(document.getElementById('productPrice').value)
+            };
+
+            try {
+                const response = await fetch('/admin/api/products', {
+                    method: productId ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(productId ? { ...formData, id: parseInt(productId) } : formData)
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Failed to save product');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to save product');
+            }
+        });
+    });
+
+    function hideProductModal() {
+        modal.classList.add('hidden');
+    }
+</script>
+{{ end }}
