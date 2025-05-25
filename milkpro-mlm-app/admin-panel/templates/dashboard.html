@@ -1,0 +1,169 @@
+{{ define "content" }}
+<div class="space-y-6">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                            <dd class="text-2xl font-semibold text-gray-900">{{ .Stats.TotalUsers }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Investments</dt>
+                            <dd class="text-2xl font-semibold text-gray-900">${{ printf "%.2f" .Stats.TotalInvestments }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Transactions</dt>
+                            <dd class="text-2xl font-semibold text-gray-900">${{ printf "%.2f" .Stats.TotalTransactions }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-red-500 rounded-md p-3">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Pending KYC</dt>
+                            <dd class="text-2xl font-semibold text-gray-900">{{ .Stats.PendingKYC }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900">Investments Overview</h3>
+            <div class="mt-4">
+                <canvas id="investmentsChart" height="300"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900">Transactions Overview</h3>
+            <div class="mt-4">
+                <canvas id="transactionsChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden container for chart data -->
+<div id="chartData" style="display: none;"
+    data-investments='{{ .ChartData.InvestmentsData | safeJS }}'
+    data-transactions='{{ .ChartData.TransactionsData | safeJS }}'>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get chart data from hidden container
+        const dataContainer = document.getElementById('chartData');
+        const chartData = {
+            investments: JSON.parse(dataContainer.dataset.investments),
+            transactions: JSON.parse(dataContainer.dataset.transactions)
+        };
+
+        // Initialize Investments Chart
+        const investmentsCtx = document.getElementById('investmentsChart').getContext('2d');
+        new Chart(investmentsCtx, {
+            type: 'line',
+            data: {
+                labels: chartData.investments.labels,
+                datasets: [{
+                    label: 'Investments',
+                    data: chartData.investments.values,
+                    borderColor: 'rgb(79, 70, 229)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Initialize Transactions Chart
+        const transactionsCtx = document.getElementById('transactionsChart').getContext('2d');
+        new Chart(transactionsCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.transactions.labels,
+                datasets: [{
+                    label: 'Transactions',
+                    data: chartData.transactions.values,
+                    backgroundColor: 'rgb(245, 158, 11)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{{ end }}
