@@ -6,13 +6,31 @@ import (
     "log"
     "net/http"
     "path/filepath"
+    "time"
 )
+
+type User struct {
+    ID        int
+    Name      string
+    Email     string
+    Phone     string
+    CreatedAt time.Time
+}
+
+type Product struct {
+    ID          int
+    Name        string
+    Description string
+    Price       float64
+}
 
 type PageData struct {
     Title    string
     Active   string
     Stats    *DashboardStats
     ChartData *ChartData
+    Users    []User
+    Products []Product
 }
 
 type DashboardStats struct {
@@ -28,7 +46,17 @@ type ChartData struct {
 }
 
 func main() {
+    // Load templates
     templates := loadTemplates()
+
+    // Root route redirect to dashboard
+    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        if r.URL.Path == "/" {
+            http.Redirect(w, r, "/admin/dashboard", http.StatusFound)
+            return
+        }
+        http.NotFound(w, r)
+    })
 
     http.HandleFunc("/admin/dashboard", func(w http.ResponseWriter, r *http.Request) {
         stats := &DashboardStats{
@@ -55,9 +83,11 @@ func main() {
             Active:    "dashboard",
             Stats:     stats,
             ChartData: chartData,
+            Users:     []User{},
+            Products:  []Product{},
         }
 
-        err := templates.ExecuteTemplate(w, "dashboard.html", data)
+        err := templates.ExecuteTemplate(w, "layout.html", data)
         if err != nil {
             http.Error(w, err.Error(), http.StatusInternalServerError)
             return
@@ -68,13 +98,15 @@ func main() {
     fs := http.FileServer(http.Dir("static"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-    log.Println("Starting admin panel on :8080")
-    log.Fatal(http.ListenAndServe(":8080", nil))
+    log.Println("Starting admin panel on :8000")
+    log.Fatal(http.ListenAndServe(":8000", nil))
 }
 
 func loadTemplates() *template.Template {
     templatesDir := "templates"
     pattern := filepath.Join(templatesDir, "*.html")
+    
+    log.Printf("Loading templates from: %s", pattern)
     
     funcMap := template.FuncMap{
         "safeJS": func(v interface{}) template.JS {
@@ -86,7 +118,17 @@ func loadTemplates() *template.Template {
         },
     }
     
-    return template.Must(template.New("").Funcs(funcMap).ParseGlob(pattern))
+    tmpl, err := template.New("").Funcs(funcMap).ParseGlob(pattern)
+    if err != nil {
+        log.Fatalf("Error loading templates: %v", err)
+    }
+    
+    // List loaded templates for debugging
+    for _, t := range tmpl.Templates() {
+        log.Printf("Loaded template: %s", t.Name())
+    }
+    
+    return tmpl
 }
 
 type ChartDataPoint struct {
