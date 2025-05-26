@@ -82,7 +82,69 @@ CREATE TABLE referrals (
     UNIQUE(user_id, referred_user_id)
 );
 
--- Create indexes
+-- Support staff table
+CREATE TABLE support_staff (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'support', -- 'support' or 'admin'
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Support tickets table
+CREATE TABLE support_tickets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    subject VARCHAR(200) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'open', -- 'open', 'in_progress', 'resolved', 'closed'
+    priority VARCHAR(20) NOT NULL DEFAULT 'medium', -- 'low', 'medium', 'high', 'urgent'
+    assigned_to INTEGER REFERENCES support_staff(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Support ticket messages table
+CREATE TABLE ticket_messages (
+    id SERIAL PRIMARY KEY,
+    ticket_id INTEGER REFERENCES support_tickets(id),
+    sender_type VARCHAR(20) NOT NULL, -- 'user', 'staff'
+    sender_id INTEGER NOT NULL, -- references users.id or support_staff.id
+    message TEXT NOT NULL,
+    attachment_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Live chat sessions table
+CREATE TABLE chat_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    staff_id INTEGER REFERENCES support_staff(id),
+    status VARCHAR(20) NOT NULL DEFAULT 'active', -- 'active', 'ended'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ended_at TIMESTAMP
+);
+
+-- Live chat messages table
+CREATE TABLE chat_messages (
+    id SERIAL PRIMARY KEY,
+    session_id INTEGER REFERENCES chat_sessions(id),
+    sender_type VARCHAR(20) NOT NULL, -- 'user', 'staff'
+    sender_id INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for support system
+CREATE INDEX idx_support_tickets_user_id ON support_tickets(user_id);
+CREATE INDEX idx_support_tickets_assigned_to ON support_tickets(assigned_to);
+CREATE INDEX idx_ticket_messages_ticket_id ON ticket_messages(ticket_id);
+CREATE INDEX idx_chat_sessions_user_id ON chat_sessions(user_id);
+CREATE INDEX idx_chat_sessions_staff_id ON chat_sessions(staff_id);
+CREATE INDEX idx_chat_messages_session_id ON chat_messages(session_id);
+
+-- Create indexes for existing tables
 CREATE INDEX idx_users_phone ON users(phone);
 CREATE INDEX idx_users_referral_code ON users(referral_code);
 CREATE INDEX idx_investments_user_id ON investments(user_id);
