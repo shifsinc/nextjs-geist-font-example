@@ -1,0 +1,159 @@
+{{ define "content" }}
+<div class="flex h-[calc(100vh-12rem)] bg-white shadow rounded-lg overflow-hidden">
+    <!-- Chat Info Sidebar -->
+    <div class="w-64 border-r border-gray-200 bg-gray-50">
+        <div class="p-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Chat Session #{{ .Session.ID }}</h3>
+            <p class="mt-1 text-sm text-gray-500">Started {{ .Session.CreatedAt }}</p>
+        </div>
+        <div class="p-4">
+            <div class="space-y-4">
+                <div>
+                    <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider">User Info</h4>
+                    <p class="mt-1 text-sm text-gray-900">{{ .Session.UserName }}</p>
+                    <p class="text-sm text-gray-500">{{ .Session.UserEmail }}</p>
+                </div>
+                <div>
+                    <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</h4>
+                    <span class="mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        {{ if eq .Session.Status "active" }}bg-green-100 text-green-800
+                        {{ else }}bg-gray-100 text-gray-800{{ end }}">
+                        {{ .Session.Status }}
+                    </span>
+                </div>
+                <div>
+                    <button type="button" onclick="window.chatApp.endChat()" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        End Chat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="flex-1 flex flex-col">
+        <!-- Messages Container -->
+        <div class="flex-1 p-4 space-y-4 overflow-y-auto" id="messages">
+            {{ range .Messages }}
+            <div class="flex {{ if eq .SenderType "staff" }}justify-end{{ end }}">
+                <div class="max-w-sm {{ if eq .SenderType "staff" }}bg-indigo-600 text-white{{ else }}bg-gray-100 text-gray-900{{ end }} rounded-lg px-4 py-2 shadow">
+                    <p class="text-sm">{{ .Message }}</p>
+                    <p class="text-xs {{ if eq .SenderType "staff" }}text-indigo-200{{ else }}text-gray-500{{ end }} mt-1">{{ .CreatedAt }}</p>
+                </div>
+            </div>
+            {{ end }}
+        </div>
+
+        <!-- Message Input -->
+        <div class="p-4 border-t border-gray-200">
+            <form id="messageForm" class="flex space-x-4">
+                <input type="text" id="messageInput" name="message" class="flex-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300" placeholder="Type your message...">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+window.chatApp = (function() {
+    'use strict';
+
+    const sessionId = {{ .Session.ID }};
+    let ws = null;
+
+    function init() {
+        connectWebSocket();
+        setupEventListeners();
+    }
+
+    function connectWebSocket() {
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/ws/chat/${sessionId}`;
+        
+        ws = new WebSocket(wsUrl);
+        
+        ws.onmessage = function(event) {
+            const message = JSON.parse(event.data);
+            appendMessage(message);
+        };
+
+        ws.onclose = function() {
+            setTimeout(connectWebSocket, 5000);
+        };
+    }
+
+    function setupEventListeners() {
+        document.getElementById('messageForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            sendMessage();
+        });
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const message = input.value.trim();
+        
+        if (message && ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'message',
+                message: message
+            }));
+            input.value = '';
+        }
+    }
+
+    function appendMessage(message) {
+        const messagesDiv = document.getElementById('messages');
+        const messageDiv = document.createElement('div');
+        const isStaff = message.senderType === 'staff';
+        
+        messageDiv.className = `flex ${isStaff ? 'justify-end' : ''}`;
+        
+        const bgColorClass = isStaff ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-900';
+        const timeColorClass = isStaff ? 'text-indigo-200' : 'text-gray-500';
+        
+        messageDiv.innerHTML = `
+            <div class="max-w-sm ${bgColorClass} rounded-lg px-4 py-2 shadow">
+                <p class="text-sm">${escapeHtml(message.message)}</p>
+                <p class="text-xs ${timeColorClass} mt-1">${escapeHtml(message.createdAt)}</p>
+            </div>
+        `;
+        
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '<')
+            .replace(/>/g, '>')
+            .replace(/"/g, '"')
+            .replace(/'/g, '&#039;');
+    }
+
+    function endChat() {
+        if (confirm('Are you sure you want to end this chat session?')) {
+            fetch(`/admin/chat/${sessionId}/end`, {
+                method: 'POST',
+                credentials: 'same-origin'
+            }).then(response => {
+                if (response.ok) {
+                    window.location.href = '/admin/support';
+                }
+            });
+        }
+    }
+
+    // Initialize when the page loads
+    init();
+
+    // Public API
+    return {
+        endChat: endChat
+    };
+})();
+</script>
+{{ end }}
